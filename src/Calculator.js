@@ -6,6 +6,8 @@ const Calculator = () => {
   const [pendingValue, setPendingValue] = useState(null);
   const [operator, setOperator] = useState(null);
   const [calculation, setCalculation] = useState(''); // 新增状态变量
+  const [history, setHistory] = useState([]); // 新增历史状态变量
+  const [showHistory, setShowHistory] = useState(false); // 控制历史显示
 
   const updateDisplay = (value) => {
     setDisplayValue(value);
@@ -51,7 +53,9 @@ const Calculator = () => {
       updateDisplay(String(result));
       setPendingValue(null);
       setOperator(null);
-      setCalculation(calculation + ' = ' + result); // 更新计算过程
+      const fullCalculation = calculation + ' = ' + result;
+      setCalculation(fullCalculation); // 更新计算过程
+      updateHistory(fullCalculation); // 更新历史记录
     }
   };
 
@@ -84,6 +88,17 @@ const Calculator = () => {
     setCalculation(calculation + ' % '); // 更新计算过程
   };
 
+  const updateHistory = (entry) => {
+    setHistory((prevHistory) => {
+      const newHistory = [entry, ...prevHistory];
+      return newHistory.slice(0, 5); // 只保留最近5次计算
+    });
+  };
+
+  const toggleHistory = () => {
+    setShowHistory(!showHistory);
+  };
+
   return (
     <div className="calculator">
       <div className="display">
@@ -110,7 +125,18 @@ const Calculator = () => {
         <button className="btn zero" onClick={() => inputNumber(0)}>0</button>
         <button className="btn" onClick={inputDecimal}>.</button>
         <button className="btn equal" onClick={calculateResult}>=</button>
+        <button className="btn history" onClick={toggleHistory}>历史</button> {/* 新增历史按钮 */}
       </div>
+      {showHistory && (
+        <div className="history">
+          <h2>历史记录</h2>
+          <ul>
+            {history.map((entry, index) => (
+              <li key={index}>{entry}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
