@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
+import Display from './Display';
+import Buttons from './Buttons';
+import History from './History';
 import './Calculator.css';
 
 const Calculator = () => {
   const [displayValue, setDisplayValue] = useState('0');
   const [pendingValue, setPendingValue] = useState(null);
   const [operator, setOperator] = useState(null);
-  const [calculation, setCalculation] = useState(''); // 新增状态变量
-  const [history, setHistory] = useState([]); // 新增历史状态变量
-  const [showHistory, setShowHistory] = useState(false); // 控制历史显示
+  const [calculation, setCalculation] = useState('');
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const updateDisplay = (value) => {
     setDisplayValue(value);
@@ -17,16 +20,17 @@ const Calculator = () => {
     setDisplayValue('0');
     setPendingValue(null);
     setOperator(null);
-    setCalculation(''); // 清空计算过程
+    setCalculation('');
   };
 
   const inputNumber = (number) => {
-    if (displayValue === '0') {
+    if (displayValue === '0' || operator) {
       updateDisplay(String(number));
+      setCalculation((prevCalculation) => prevCalculation.trim() + String(number));
     } else {
       updateDisplay(displayValue + String(number));
+      setCalculation((prevCalculation) => prevCalculation + String(number));
     }
-    setCalculation(calculation + String(number)); // 更新计算过程
   };
 
   const inputOperator = (op) => {
@@ -37,13 +41,13 @@ const Calculator = () => {
     }
     updateDisplay('0');
     setOperator(op);
-    setCalculation(calculation + ' ' + op + ' '); // 更新计算过程
+    setCalculation(displayValue + ' ' + op + ' ');
   };
 
   const inputDecimal = () => {
     if (!displayValue.includes('.')) {
       updateDisplay(displayValue + '.');
-      setCalculation(calculation + '.'); // 更新计算过程
+      setCalculation(calculation + '.');
     }
   };
 
@@ -53,9 +57,9 @@ const Calculator = () => {
       updateDisplay(String(result));
       setPendingValue(null);
       setOperator(null);
-      const fullCalculation = calculation + ' = ' + result;
-      setCalculation(fullCalculation); // 更新计算过程
-      updateHistory(fullCalculation); // 更新历史记录
+      const fullCalculation = calculation + displayValue + ' = ' + result;
+      setCalculation(fullCalculation);
+      updateHistory(fullCalculation);
     }
   };
 
@@ -79,19 +83,19 @@ const Calculator = () => {
   const toggleSign = () => {
     const newValue = String(parseFloat(displayValue) * -1);
     updateDisplay(newValue);
-    setCalculation(calculation + ' ± '); // 更新计算过程
+    setCalculation(calculation + ' ± ');
   };
 
   const inputPercent = () => {
     const newValue = String(parseFloat(displayValue) / 100);
     updateDisplay(newValue);
-    setCalculation(calculation + ' % '); // 更新计算过程
+    setCalculation(calculation + ' % ');
   };
 
   const updateHistory = (entry) => {
     setHistory((prevHistory) => {
       const newHistory = [entry, ...prevHistory];
-      return newHistory.slice(0, 5); // 只保留最近5次计算
+      return newHistory.slice(0, 5);
     });
   };
 
@@ -99,44 +103,49 @@ const Calculator = () => {
     setShowHistory(!showHistory);
   };
 
+  const deleteHistoryItem = (index) => {
+    setHistory((prevHistory) => prevHistory.filter((_, i) => i !== index));
+  };
+
+  const handleButtonClick = (label) => {
+    switch (label) {
+      case 'C':
+        clearDisplay();
+        break;
+      case '±':
+        toggleSign();
+        break;
+      case '%':
+        inputPercent();
+        break;
+      case '÷':
+      case '×':
+      case '-':
+      case '+':
+        inputOperator(label);
+        break;
+      case '=':
+        calculateResult();
+        break;
+      case '.':
+        inputDecimal();
+        break;
+      default:
+        inputNumber(label);
+        break;
+    }
+  };
+
   return (
-    <div className="calculator">
-      <div className="display">
-        <div className="calculation">{calculation}</div> {/* 显示计算过程 */}
-        <div className="result">{displayValue}</div> {/* 显示结果 */}
+    <div className="calculator-container">
+      <div className="calculator">
+        <Display calculation={calculation} displayValue={displayValue} />
+        <Buttons onClick={handleButtonClick} />
       </div>
-      <div className="buttons">
-        <button className="btn clear" onClick={clearDisplay}>C</button>
-        <button className="btn" onClick={toggleSign}>±</button>
-        <button className="btn" onClick={inputPercent}>%</button>
-        <button className="btn operator" onClick={() => inputOperator('/')}>÷</button>
-        <button className="btn" onClick={() => inputNumber(7)}>7</button>
-        <button className="btn" onClick={() => inputNumber(8)}>8</button>
-        <button className="btn" onClick={() => inputNumber(9)}>9</button>
-        <button className="btn operator" onClick={() => inputOperator('*')}>×</button>
-        <button className="btn" onClick={() => inputNumber(4)}>4</button>
-        <button className="btn" onClick={() => inputNumber(5)}>5</button>
-        <button className="btn" onClick={() => inputNumber(6)}>6</button>
-        <button className="btn operator" onClick={() => inputOperator('-')}>-</button>
-        <button className="btn" onClick={() => inputNumber(1)}>1</button>
-        <button className="btn" onClick={() => inputNumber(2)}>2</button>
-        <button className="btn" onClick={() => inputNumber(3)}>3</button>
-        <button className="btn operator" onClick={() => inputOperator('+')}>+</button>
-        <button className="btn zero" onClick={() => inputNumber(0)}>0</button>
-        <button className="btn" onClick={inputDecimal}>.</button>
-        <button className="btn equal" onClick={calculateResult}>=</button>
-        <button className="btn history" onClick={toggleHistory}>历史</button> {/* 新增历史按钮 */}
+      <div className="history-container">
+        <button className="btn history" onClick={toggleHistory}>历史</button>
+        {showHistory && <History history={history} onDelete={deleteHistoryItem} />}
       </div>
-      {showHistory && (
-        <div className="history">
-          <h2>历史记录</h2>
-          <ul>
-            {history.map((entry, index) => (
-              <li key={index}>{entry}</li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };
